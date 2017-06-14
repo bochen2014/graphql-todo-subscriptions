@@ -17,7 +17,7 @@ export const connect = (socket) => {
   });
 
   socket.on('graphql:mutation', request => {
-    handleGraphQLRequest(user, client, request).then(response => {
+    handleGraphQLRequest(user, client, request /*we must store graphql query and variables somewhere and re-execute it when rabbit mq changes*/).then(response => {
       socket.emit('graphql:mutation', response);
     });
   });
@@ -57,8 +57,6 @@ const handleGraphQLRequest = (user, client, request) => {
   const rootValue = {
     user,
     client,
-
-    // TODO: see if we can use the 3rd argument in resolve
     request
   }
 
