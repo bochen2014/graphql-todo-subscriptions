@@ -74,7 +74,9 @@ const initialze = (socket, userId) => {
 
 
   // LISTEN for incoming back-end subscription events
+  // soket.io server is Sub of graphql server;
   events.on(`${client.id}.graphql.subscription`, response => {
+    //notify client about the change with updated payload
     socket.emit('graphql:subscription', response);
   });
 

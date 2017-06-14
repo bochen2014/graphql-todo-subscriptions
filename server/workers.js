@@ -22,7 +22,7 @@ const handleSubscriptionNew = ({subscriptionId}) => {
 
   handlers = handlers.set(
     subscriptionId,
-    List(subscription.events).map(ev => {
+    List(subscription.events /*the event types that current subscription is registered for*/ ).map(ev => {
       return Handler({
         type: ev,
         callback: handleSubscriptionEvent.bind(null, subscription)
@@ -33,7 +33,10 @@ const handleSubscriptionNew = ({subscriptionId}) => {
   // start'em up!
   handlers
     .get(subscriptionId)
-    .forEach(handler => events.on(handler.type, handler.callback))
+    .forEach(handler => {
+      // here we start listening to redis/rabbit mq events (topics)
+      events.on(handler.type, handler.callback);
+    });
 }
 
 // when the subscription is deleted we remove all those listeners
@@ -45,15 +48,9 @@ const handleSubscriptionDelete = ({subscriptionId}) => {
   handlers = handlers.delete(subscriptionId);
 }
 
-// when an event the subscription is listening for happens we execute
-// a new graphql query with the subscription query and variables
-// and the event payload
-//
-// this produces a graphql response which we emit to any clients
-// listening for graphql subscription executions
-//
-// in this app that would be the socket-io client which is listening
-// for any and all subscription events for its own client id
+/*
+When a change happens in the backend, it would figure out (in some user-land described way) which subscriptions needed to be notified. The process that's listening for these changes would take the subscriber query and execute it,
+ */
 const handleSubscriptionEvent = (subscription, event) => {
   const client = db.getClient(subscription.clientId);
   const user = db.getUser(client.userId);
@@ -72,9 +69,11 @@ const handleSubscriptionEvent = (subscription, event) => {
       event
     }
   }
-
+  // a rabbitMQ/redis (pub) message/event comes in and I (Sub) need to update graphql client
+  // 1. run graphql to get the updated payload
   graphql(schema, query, rootValue, variables)
     .then(response => {
+      // 2. publicize to socket.io server (which is the Sub)
       events.emit(`${subscription.clientId}.graphql.subscription`, response);
     });
 }

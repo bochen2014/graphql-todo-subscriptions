@@ -53,8 +53,10 @@ export const individualSubscriptions = () => ({
     }
   `,
   variables: {
+    
     addTodoSubscriptionId: generateSubId(),
     deleteTodoSubscriptionId: generateSubId(),
+    //bchen:  1. client create a subscription id and pass to server;
     changeTodoSubscriptionId: generateSubId()
   }
 })

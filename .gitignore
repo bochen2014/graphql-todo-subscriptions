@@ -1,3 +1,4 @@
 node_modules
 data/schema.json
 data/schema.graphql
+dist

@@ -248,20 +248,21 @@ const ChangeTodoStatusSubscription = {
   args: {
     clientSubscriptionId: { type: new GraphQLNonNull(GraphQLString) }
   },
-  resolve: ({user,client,request,subscription:subscriptionRoot}, {clientSubscriptionId}, {variableValues}) => {
+  //https://github.com/graphql/graphql-js/pull/189
+  resolve: ({user,client,request,subscription:subscriptionRoot}, {clientSubscriptionId /*this is client generated subscriptionId*/}, {variableValues}) => {
     let subscription = db.getClientSubscription(client.id, clientSubscriptionId);
 
     if (!subscription) {
       subscription = db.addSubscription(
         client.id,
         clientSubscriptionId,
-        [`${user.id}.todo.change_status`],
-        request
+        [`${user.id}.todo.change_status`], // same as emmitter2.on('todo.change_status'). we just do it in workers.js#startWorkers
+        request // When the resolve occurs, the GraphQL server would do SOMETHING to store this query somewhere (could be in-memory or Redis), 
       );
     }
 
     return {
-      subscription,
+      subscription, //and would return back a subscriptionId that the client could use to listen for updates
       event: eventForClientSubscriptionId(subscriptionRoot, clientSubscriptionId)
     };
   }
